@@ -150,17 +150,18 @@ print_element_names(xmlNode * a_node, double *share, bool co)
     for (cur_node = a_node; cur_node; cur_node = cur_node->next) {
         if (cur_node->type == XML_ELEMENT_NODE) {
             xmlChar *val = xmlNodeGetContent(cur_node);
-            //printf("node type: Element, name: %s, value: %s\n", cur_node->name, val);
+            printf("node type: Element, name: %s, value: %s\n", cur_node->name, val);
             
             if((!xmlStrcmp(cur_node->name, (const xmlChar *)"CompID"))){
                 int id;
                 sscanf((char *)val,"%d",&id);
                 if(co){
                 if(id==0){
-                    unsigned int rnum[1];
+                    int rnum[1];
                     
                     
                     RAND_bytes((unsigned char *)&rnum[0], sizeof(rnum));
+                    rnum[0]=abs(rnum[0])%100000;
                     cur_node = cur_node->next;
                     xmlChar *val1 = xmlNodeGetContent(cur_node);
                     //printf("Adding node type: Element, name: %s, value: %s\n", cur_node->name, val1);
@@ -179,7 +180,7 @@ print_element_names(xmlNode * a_node, double *share, bool co)
                     
                     cur_node = cur_node->next;
                     xmlChar *val3 = xmlNodeGetContent(cur_node);
-                   // printf("Adding node type: Element, name: %s, value: %s\n", (char *)cur_node->name, (char *)val2);
+                   // printf("Adding node type: Element, name: %s, value: %s\n", (char *)cur_node->name, (char *)val3);
                     
                     //std::string s2((char *)val2);
                     jobs[rnum[0]][(char *)cur_node->name]=(char *)val3;
@@ -187,7 +188,7 @@ print_element_names(xmlNode * a_node, double *share, bool co)
                     
                     cur_node = cur_node->next;
                     xmlChar *val4 = xmlNodeGetContent(cur_node);
-                   // printf("Adding node type: Element, name: %s, value: %s\n", (char *)cur_node->name, (char *)val2);
+                    //printf("Adding node type: Element, name: %s, value: %s\n", (char *)cur_node->name, (char *)val4);
                     
                     //std::string s2((char *)val2);
                     jobs[rnum[0]][(char *)cur_node->name]=(char *)val4;
@@ -203,7 +204,8 @@ print_element_names(xmlNode * a_node, double *share, bool co)
                     xmlFree(val);
                     xmlFree(val1);
                     xmlFree(val2);
-                    //xmlFree(val3);
+                    xmlFree(val3);
+                    xmlFree(val4);
                     return rnum[0];
                 }else{
                     
@@ -249,16 +251,16 @@ print_element_names(xmlNode * a_node, double *share, bool co)
                             share[i]=(-1.0)*sens/eps*log(1.0-2.0*abs(rnd));
                         }
                         printf("Noisy value: %lf\n",share[i]);
-                        share[i]*=100000000;
+                        share[i]*=100000;
                     }
                 }
                     
-                    if(shares[id].size()>1)
+                    //if(shares[id].size()>1)
                         for(int i=0;i<d;i++)
                             share[i]+=(-1.0)*sum;
-                    else
-                        for(int i=0;i<d;i++)
-                            share[i]=0.0;
+                    //else
+                    //    for(int i=0;i<d;i++)
+                    //        share[i]=0.0;
                     
                     std::lock_guard<std::mutex> guard2(shares_mutex);
                     shares.erase(id);
@@ -267,8 +269,10 @@ print_element_names(xmlNode * a_node, double *share, bool co)
                 }
                 }
                 else{
-                    if(jobs.find(id) == jobs.end())
+                    if(jobs.find(id) == jobs.end()){
+                        printf("Job not found: %d\n", id);
                         return 0;
+                    }
                     int rnum[1];
                     RAND_bytes((unsigned char *)&rnum[0], sizeof(rnum));
                     //cur_node = cur_node->next;
@@ -283,7 +287,7 @@ print_element_names(xmlNode * a_node, double *share, bool co)
                     
                     xmlFree(val);
                     //xmlFree(val1);
-                    share[0]=rnum[0];
+                    share[0]=rnum[0]%100000;
                     return id;
                 }
             }
@@ -341,7 +345,7 @@ void* Servlet(void *arg) /* Serve the connection -- threadable */
             //printf("Array 0: %lf\n", share[0]);
             
             if(share[0]==-1.0){
-                echo="<Body><CompID>%s</CompID></Body>";
+                echo="<Body><CompID>%s</CompID></Body>\n";
                  sprintf(reply, echo, vOut);
                  SSL_write(ssl, reply, strlen(reply));
             }else{
@@ -365,7 +369,7 @@ void* Servlet(void *arg) /* Serve the connection -- threadable */
                     total+=reply;
                     
                 }
-                total+="</Body>";
+                total+="</Body>\n";
                 //printf("%d\n",strlen(total.c_str()));
                 SSL_write(ssl, total.c_str(), strlen(total.c_str()));
             }
@@ -377,7 +381,7 @@ void* Servlet(void *arg) /* Serve the connection -- threadable */
         else
             ERR_print_errors_fp(stderr);
     }else{
-            const char* echo="<Body><CompID>%s</CompID><Share>%s</Share><Epsilon>%s</Epsilon></Body>";
+            const char* echo="<Body><CompID>%s</CompID><Share>%s</Share><Epsilon>%s</Epsilon></Body>\n";
             bytes = SSL_read(ssl, buf, sizeof(buf)); /* get request */
         if ( bytes > 0 )
         {
@@ -394,24 +398,26 @@ void* Servlet(void *arg) /* Serve the connection -- threadable */
             printf("Sending share %lf for job %u to Worker\n", share[0], id);
             sprintf(reply, echo, vOut1,vOut2,jobs[id]["DP"].c_str());   /* construct reply */
             SSL_write(ssl, reply, strlen(reply)); /* send reply */
+            //printf("Sent!");
             buf[0]=0;
             bytes = SSL_read(ssl, buf, sizeof(buf)); /* get response */
             
             if ( bytes > 0 ){
                 buf[bytes] = 0;
-                //printf("Worker msg: \"%s\"\n", buf);
+                printf("Worker msg: \"%s\"\n", buf);
                 if(strcmp(buf,"OK")==0&&jobs.find(id) != jobs.end()){
                     buf[0]=0;
                     bytes = SSL_read(ssl, buf, sizeof(buf));
                     buf[bytes] = 0;
                     int k;
                     sscanf(buf,"%d",&k);
+                    printf("Worker msg: \"%s\"\n", buf);
                     std::pair<double,int> tmp;
                     tmp.first=share[0];
                     tmp.second=k;
                     std::lock_guard<std::mutex> guard(shares_mutex);
                     shares[id].push_front(tmp);
-                    //printf("Client Accepted\n");
+                    printf("Client Accepted\n");
                 }
                 else
                     printf("Client Rejected or Timed-out\n");
