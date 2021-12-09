@@ -106,6 +106,9 @@ void LoadCertificates(SSL_CTX* ctx, char* CertFile, char* KeyFile) {
     SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
     SSL_CTX_set_verify_depth(ctx, 4);
     //End new lines
+
+    // not issue stateless session tickets
+    SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
 }
 
 bool ShowCerts(SSL* ssl) {
