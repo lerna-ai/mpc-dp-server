@@ -393,21 +393,19 @@ void* Servlet(void *arg) /* Serve the connection -- threadable */ {
 
 
 
-                    std::string total = "<Body>";
+                    std::string total = "<Body><Shares>";
                     // printf("d: %d\n", d);
                     //here's the hack because we cannot read Wsize, so we used the job id to store it...
                     for (int i = 0; i < job_id; i++) {
-                        echo = "<Share%s>%s</Share%s>";
-                        char vtmp [20];
+                        echo = "<Share>%s</Share>";
                         char vOut2 [20];
-                        snprintf(vtmp, sizeof (vOut2), "%d", i);
                         snprintf(vOut2, sizeof (vOut2), "%lf", share[i]);
-                        sprintf(reply, echo, vtmp, vOut2, vtmp);
+                        sprintf(reply, echo, vOut2);
                         
                         total += reply;
 
                     }
-                    total += "</Body>\n";
+                    total += "</Shares></Body>\n";
                     //printf("%d\n",strlen(total.c_str()));
                     SSL_write(ssl, total.c_str(), strlen(total.c_str()));
                 }
