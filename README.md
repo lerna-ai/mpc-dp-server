@@ -57,7 +57,7 @@ To build image, change to the project directory and run the `docker build` comma
 ```bash
 # Build Docker image
 #
-docker build . -t noise-api:1.0.0
+docker build . -t mpc:1.0.0
 ```
 
 #### Run the Docker container
@@ -67,5 +67,5 @@ To start the Docker container with application, execute the following command:
 ```bash
 # Run Docker container and publish 31337 port
 #
-docker run --rm -it -p 31337:31337 noise-api:1.0.0
+docker run --rm -it -p 31337:31337 mpc:1.0.0
 ```

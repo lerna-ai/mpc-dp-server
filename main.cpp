@@ -240,7 +240,7 @@ process_job(xmlNode * a_node, double *share, int *user_id, bool co) {
                                     printf ("%s\n",pch);
                                     int u_id;
                                     sscanf(pch, "%d", &u_id);
-                                    shares[job_id].erase(u_id);
+                                    shares.at(job_id).erase(u_id);
                                     pch = strtok (NULL, ";");
                                 }
                             }
@@ -250,14 +250,14 @@ process_job(xmlNode * a_node, double *share, int *user_id, bool co) {
                         double sum = 0.0;
                         int min = INT_MAX;
                         
-                        for (auto& it: shares[job_id]) {
+                        for (auto& it: shares.at(job_id)) {
                             sum+=it.second.first;
                             if (min > it.second.second)
                                 min = it.second.second;
                         }
                         
                         
-//                        for (std::pair<double, int> n : shares[job_id]) {
+//                        for (std::pair<double, int> n : shares.at(job_id)) {
 //                            sum += n.first;
 //                            if (min > n.second)
 //                                min = n.second;
@@ -334,6 +334,7 @@ process_job(xmlNode * a_node, double *share, int *user_id, bool co) {
 
         //print_element_names(cur_node->children);
     }
+    return -1;
 }
 
 int parsemsg(char* xml, int length, double *share, int *u_id, bool co) {
@@ -383,6 +384,8 @@ void* Servlet(void *arg) /* Serve the connection -- threadable */ {
 
                 if (share[0] == -1.0) {
                     echo = "<Body><CompID>%s</CompID></Body>\n";
+                    printf("Adding job %d\n", job_id);
+                    shares[job_id];
                     sprintf(reply, echo, vOut);
                     SSL_write(ssl, reply, strlen(reply));
                 } else {
@@ -435,7 +438,7 @@ void* Servlet(void *arg) /* Serve the connection -- threadable */ {
                     snprintf(vOut1, sizeof (vOut1), "%u", job_id);
                     char vOut2 [20];
                     snprintf(vOut2, sizeof (vOut2), "%lf", share[0]);
-                    printf("Sending share %lf for job %u to Worker\n", share[0], job_id);
+                    printf("Sending share %lf for job %u to worker %d\n", share[0], job_id, u_id[0]);
                     
                     sprintf(reply, echo, vOut1, vOut2, jobs[job_id]["DP"].c_str()); /* construct reply */
                     SSL_write(ssl, reply, strlen(reply)); /* send reply */
@@ -458,7 +461,8 @@ void* Servlet(void *arg) /* Serve the connection -- threadable */ {
                             tmp.second = card;
                             std::lock_guard<std::mutex> guard(shares_mutex);
                             int key = u_id[0];
-                            shares[job_id].insert({key, tmp});
+                            //shares.at(job_id).insert({key, tmp});
+                            shares.at(job_id)[key]=tmp;
                             printf("Client %d Accepted\n",key);
                         } else
                             printf("Client Rejected or Timed-out\n");
@@ -472,6 +476,7 @@ void* Servlet(void *arg) /* Serve the connection -- threadable */ {
     sd = SSL_get_fd(ssl); /* get socket connection */
     SSL_free(ssl); /* release SSL state */
     close(sd); /* close connection */
+    return NULL;
 }
 
 int main() {

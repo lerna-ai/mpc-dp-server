@@ -9,19 +9,19 @@ CND_DISTDIR=dist
 # Debug configuration
 CND_PLATFORM_Debug=GNU-Linux
 CND_ARTIFACT_DIR_Debug=dist/Debug/GNU-Linux
-CND_ARTIFACT_NAME_Debug=noiseapi
-CND_ARTIFACT_PATH_Debug=dist/Debug/GNU-Linux/noiseapi
+CND_ARTIFACT_NAME_Debug=mpc
+CND_ARTIFACT_PATH_Debug=dist/Debug/GNU-Linux/mpc
 CND_PACKAGE_DIR_Debug=dist/Debug/GNU-Linux/package
-CND_PACKAGE_NAME_Debug=noiseapi.tar
-CND_PACKAGE_PATH_Debug=dist/Debug/GNU-Linux/package/noiseapi.tar
+CND_PACKAGE_NAME_Debug=mpc.tar
+CND_PACKAGE_PATH_Debug=dist/Debug/GNU-Linux/package/mpc.tar
 # Release configuration
 CND_PLATFORM_Release=GNU-Linux
 CND_ARTIFACT_DIR_Release=dist/Release/GNU-Linux
-CND_ARTIFACT_NAME_Release=noiseapi
-CND_ARTIFACT_PATH_Release=dist/Release/GNU-Linux/noiseapi
+CND_ARTIFACT_NAME_Release=mpc
+CND_ARTIFACT_PATH_Release=dist/Release/GNU-Linux/mpc
 CND_PACKAGE_DIR_Release=dist/Release/GNU-Linux/package
-CND_PACKAGE_NAME_Release=noiseapi.tar
-CND_PACKAGE_PATH_Release=dist/Release/GNU-Linux/package/noiseapi.tar
+CND_PACKAGE_NAME_Release=mpc.tar
+CND_PACKAGE_PATH_Release=dist/Release/GNU-Linux/package/mpc.tar
 #
 # include compiler specific variables
 #
