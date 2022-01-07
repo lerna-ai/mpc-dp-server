@@ -434,6 +434,8 @@ void* Servlet(void *arg) /* Serve the connection -- threadable */ {
 
 
                     //int share=shares[id][cid].first;
+                    if(shares.at(job_id).find(u_id[0])!=shares.at(job_id).end())
+                        share[0]=shares.at(job_id).at(u_id[0]).first;
                     char vOut1 [12];
                     snprintf(vOut1, sizeof (vOut1), "%u", job_id);
                     char vOut2 [20];
@@ -461,8 +463,15 @@ void* Servlet(void *arg) /* Serve the connection -- threadable */ {
                             tmp.second = card;
                             std::lock_guard<std::mutex> guard(shares_mutex);
                             int key = u_id[0];
-                            //shares.at(job_id).insert({key, tmp});
-                            shares.at(job_id)[key]=tmp;
+                            printf("Storing: %lf %d at %d of %d: %d\n", tmp.first, tmp.second, key, job_id, shares.at(job_id).insert({key, tmp}).second);
+                            
+                           //shares.at(job_id).insert({key, tmp});
+                            //if(&shares.at(job_id)[key]){
+                            //    fprintf(stderr, "Key %d already exists for job %d!\n", key, job_id);
+                            //} else {
+                            //    fprintf(stderr, "Storing: %lf %d at %d of %d\n", tmp.first, tmp.second, key, job_id);
+                            //    shares.at(job_id)[key]=tmp;
+                            //}
                             printf("Client %d Accepted\n",key);
                         } else
                             printf("Client Rejected or Timed-out\n");
