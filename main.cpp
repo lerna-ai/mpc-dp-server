@@ -38,15 +38,25 @@
 #define FAIL    -1
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 std::unordered_map<int, std::unordered_map<int, std::pair<double, int>>> shares;
-std::mutex shares_mutex;
 std::unordered_map<unsigned int, std::unordered_map<std::string, std::string>> jobs;
+std::mutex shares_mutex;
 std::mutex jobs_mutex;
+std::unique_lock<std::mutex> lck_shares (shares_mutex,std::defer_lock);
+std::unique_lock<std::mutex> lck_jobs (jobs_mutex,std::defer_lock);
 
 int OpenListener(int port) {
     int sd;
     struct sockaddr_in addr;
-
+    struct timeval tv;
+    tv.tv_sec = 30; // 30 seconds
+    tv.tv_usec = 0;
+    
     sd = socket(PF_INET, SOCK_STREAM, 0);
+    
+    
+    setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+    
+    
     bzero(&addr, sizeof (addr));
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
@@ -158,7 +168,7 @@ process_job(xmlNode * a_node, double *share, int *user_id, bool co) {
                         cur_node = cur_node->next;
                         xmlChar *val1 = xmlNodeGetContent(cur_node);
                         //printf("Adding node type: Element, name: %s, value: %s\n", cur_node->name, val1);
-                        std::lock_guard<std::mutex> guard(jobs_mutex);
+                        lck_jobs.lock();
                         //std::string s1((char *)val1);
                         jobs[rnum[0]][(char *) cur_node->name] = (char *) val1;
 
@@ -191,8 +201,7 @@ process_job(xmlNode * a_node, double *share, int *user_id, bool co) {
                         //                    
                         //                    //std::string s2((char *)val2);
                         //                    jobs[rnum[0]][(char *)cur_node->name]=(char *)val3;
-
-
+                        lck_jobs.unlock();
                         //printf("%s\n",jobs[rnum[0]]["DP"].c_str());
                         xmlFree(val);
                         xmlFree(val1);
@@ -203,8 +212,9 @@ process_job(xmlNode * a_node, double *share, int *user_id, bool co) {
                     } else {
 
                         if (jobs.find(job_id) == jobs.end()) {
-                            std::lock_guard<std::mutex> guard2(shares_mutex);
+                            lck_shares.lock();
                             shares.erase(job_id);
+                            lck_shares.unlock();
                             return 0; //we should do something else instead of killing the server if the job is not found...
                         }
                         
@@ -223,9 +233,9 @@ process_job(xmlNode * a_node, double *share, int *user_id, bool co) {
                         sscanf(jobs[job_id]["a"].c_str(), "%lf", &a);
                         //sscanf(jobs[id]["Sensitivity"].c_str(),"%lf",&sens);
 
-                        std::lock_guard<std::mutex> guard1(jobs_mutex);
+                        lck_jobs.lock();
                         jobs.erase(job_id);
-                        
+                        lck_jobs.unlock();
                         
                         //read the dropped users
                         cur_node = cur_node->next;
@@ -289,9 +299,9 @@ process_job(xmlNode * a_node, double *share, int *user_id, bool co) {
                         //    for(int i=0;i<d;i++)
                         //        share[i]=0.0;
 
-                        std::lock_guard<std::mutex> guard2(shares_mutex);
+                        lck_shares.lock();
                         shares.erase(job_id);
-
+                        lck_shares.unlock();
                         return d; //this is a hack because even without erasing id, we cannot read Wsize outside this function for some reason...
                     }
                 } else {
@@ -358,7 +368,7 @@ void* Servlet(void *arg) /* Serve the connection -- threadable */ {
     char buf[4096];
     char reply[4096];
     int sd, bytes;
-
+    
 
     //printf("Thread id: %lu\n", pthread_self());
     if (SSL_accept(ssl) == FAIL) /* do SSL-protocol accept */
@@ -461,10 +471,11 @@ void* Servlet(void *arg) /* Serve the connection -- threadable */ {
                             std::pair<double, int> tmp;
                             tmp.first = share[0];
                             tmp.second = card;
-                            std::lock_guard<std::mutex> guard(shares_mutex);
-                            int key = u_id[0];
-                            printf("Storing: %lf %d at %d of %d: %d\n", tmp.first, tmp.second, key, job_id, shares.at(job_id).insert({key, tmp}).second);
                             
+                            int key = u_id[0];
+                            lck_shares.lock();
+                            printf("Storing: %lf %d at %d of %d: %d\n", tmp.first, tmp.second, key, job_id, shares.at(job_id).insert({key, tmp}).second);
+                            lck_shares.unlock();
                            //shares.at(job_id).insert({key, tmp});
                             //if(&shares.at(job_id)[key]){
                             //    fprintf(stderr, "Key %d already exists for job %d!\n", key, job_id);
