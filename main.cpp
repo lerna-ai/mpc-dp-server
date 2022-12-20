@@ -262,7 +262,10 @@ process_job(xmlNode * a_node, double *share, int *user_id, bool co) {
                         
                         for (auto& it: shares.at(job_id)) {
                             sum+=it.second.first;
-                            if (min > it.second.second)
+                            if (it.second.second == NULL || it.second.second < 1){
+                                min=1;
+                            }
+                            else if (min > it.second.second)
                                 min = it.second.second;
                         }
                         
