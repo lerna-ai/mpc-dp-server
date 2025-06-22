@@ -254,6 +254,7 @@ process_job(xmlNode * a_node, double *share, int *user_id, bool co) {
                                     pch = strtok (NULL, ";");
                                 }
                             }
+                            xmlFree(val_droped);
                         }
                         
                         
@@ -332,6 +333,7 @@ process_job(xmlNode * a_node, double *share, int *user_id, bool co) {
                                 sscanf((char *) val_u_id, "%d", &u_id);
                                 user_id[0]=u_id;
                             }
+                            xmlFree(val_u_id);
                         }
                     
                     
@@ -353,7 +355,7 @@ process_job(xmlNode * a_node, double *share, int *user_id, bool co) {
 int parsemsg(char* xml, int length, double *share, int *u_id, bool co) {
     xmlDocPtr doc;
     xmlNode *root_element = NULL;
-    doc = xmlReadMemory(xml, length, "noname.xml", NULL, 0);
+    doc = xmlReadMemory(xml, length, "noname.xml", NULL, XML_PARSE_HUGE);
     if (doc == NULL) {
         fprintf(stderr, "Failed to parse document\n");
         return -1;
@@ -368,8 +370,8 @@ int parsemsg(char* xml, int length, double *share, int *u_id, bool co) {
 
 void* Servlet(void *arg) /* Serve the connection -- threadable */ {
     SSL *ssl = ((SSL *) arg);
-    char buf[4096];
-    char reply[4096];
+    char buf[16384];
+    char reply[16384];
     int sd, bytes;
     
 
