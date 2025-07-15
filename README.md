@@ -1,5 +1,5 @@
 # Lerna mpc
-> Lerna noise API
+> Lerna noise API - ToDo: Make it Intel® SGX ready
 
 
 ## Table of contents
